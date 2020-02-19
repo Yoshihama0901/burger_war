@@ -1,16 +1,22 @@
 <?xml version="1.0"?>
 <launch>
+  <arg name="robot_name" default="red_bot"/> <!-- robot_name for use NAMESPACE -->
   <arg name="side" default="r"/> <!-- "b" = blue side, "r" = red side  -->
 
     <!-- You can change control program  -->
 
-
     <!-- sample program node -->
+    <!-- Your robot control node run -->
 
-    <node pkg="burger_war" type="randomRun.py" name="randomRun" output="screen"/>
+    <include file="$(find burger_navigation)/launch/burger_navigation.launch">
+    </include>
+
+    <node pkg="burger_war" type="TeamEmbeddedAI.py" name="randomRun" output="screen">
+      <param name="rname" value="$(arg robot_name)" />
+      <param name="rside" value="$(arg side)" />
+    </node>
 
     <!-- END sample program node -->
-
 
     <!-- End of your space  -->
 </launch>

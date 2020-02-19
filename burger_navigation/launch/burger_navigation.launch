@@ -11,6 +11,7 @@
   <arg name="initial_pose_x" default="-1.3"/>
   <arg name="initial_pose_y" default="0.0"/>
   <arg name="initial_pose_a" default="0.0"/>
+  <arg name="robot_name" default="" />
 
   <!-- Turtlebot3 -->
   <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch">
