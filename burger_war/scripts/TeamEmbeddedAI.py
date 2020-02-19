@@ -21,34 +21,34 @@ import cv2
 from cv_bridge import CvBridge, CvBridgeError
 import rosparam
  
-# ‹­‰»ŠwKDQN (Deep Q Network)
+# å¼·åŒ–å­¦ç¿’DQN (Deep Q Network)
 from MyModule import DQN
 
-timeScale  = 4    # ‚P•bŠÔ‚Å‰½‰ñÀ•WŒvZ‚·‚é‚©H
-fieldScale = 1.5  # ‹£‹Zê‚ÌL‚³
-#turnEnd    = 40   # ‰½ƒ^[ƒ“‚Å‚P‡‚ğI—¹‚³‚¹‚é‚©
-turnEnd    = 10   # ‰½ƒ^[ƒ“‚Å‚P‡‚ğI—¹‚³‚¹‚é‚©
+timeScale  = 4    # ï¼‘ç§’é–“ã§ä½•å›åº§æ¨™è¨ˆç®—ã™ã‚‹ã‹ï¼Ÿ
+fieldScale = 1.5  # ç«¶æŠ€å ´ã®åºƒã•
+#turnEnd    = 40   # ä½•ã‚¿ãƒ¼ãƒ³ã§ï¼‘è©¦åˆã‚’çµ‚äº†ã•ã›ã‚‹ã‹
+turnEnd    = 10   # ä½•ã‚¿ãƒ¼ãƒ³ã§ï¼‘è©¦åˆã‚’çµ‚äº†ã•ã›ã‚‹ã‹
 
 
-# ƒNƒH[ƒ^ƒjƒIƒ“‚©‚çƒIƒCƒ‰[Šp‚Ö‚Ì•ÏŠ·
+# ã‚¯ã‚©ãƒ¼ã‚¿ãƒ‹ã‚ªãƒ³ã‹ã‚‰ã‚ªã‚¤ãƒ©ãƒ¼è§’ã¸ã®å¤‰æ›
 def quaternion_to_euler(quaternion):
     e = tf.transformations.euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))
     return Vector3(x=e[0]*180/np.pi, y=e[1]*180/np.pi, z=e[2]*180/np.pi)
 
 
-# À•W‰ñ“]s—ñ‚ğ•Ô‚·
+# åº§æ¨™å›è»¢è¡Œåˆ—ã‚’è¿”ã™
 def get_rotation_matrix(rad):
     rot = np.array([[np.cos(rad), -np.sin(rad)], [np.sin(rad), np.cos(rad)]])
     return rot
 
 
-# Œ»İ’n‚ğ‚QŸŒ³ƒxƒNƒgƒ‹(n*n)‚É‚µ‚Ä•Ô‚·
+# ç¾åœ¨åœ°ã‚’ï¼’æ¬¡å…ƒãƒ™ã‚¯ãƒˆãƒ«(n*n)ã«ã—ã¦è¿”ã™
 def get_pos_matrix(x, y, n=16):
-    #my_pos  = np.array([self.pos[0], self.pos[1]])           # Œ»İ’n“_
-    pos     = np.array([x, y])                                # Œ»İ’n“_
-    rot     = get_rotation_matrix(-45 * np.pi / 180)          # 45“x‰ñ“]s—ñ‚Ì’è‹`
-    #rotated = ( np.dot(rot, pos) / fieldScale ) + 0.5         # 45“x‰ñ“]‚µ‚ÄÅ‘å•1.5‚Å³‹K‰»(0-1)
-    rotated = ( np.dot(rot, pos) + 1 ) / 2                    # ‰ñ“]‚ğs‚Á‚Ä0-1‚Ì”ÍˆÍ‚ÉƒVƒtƒg
+    #my_pos  = np.array([self.pos[0], self.pos[1]])           # ç¾åœ¨åœ°ç‚¹
+    pos     = np.array([x, y])                                # ç¾åœ¨åœ°ç‚¹
+    rot     = get_rotation_matrix(-45 * np.pi / 180)          # 45åº¦å›è»¢è¡Œåˆ—ã®å®šç¾©
+    #rotated = ( np.dot(rot, pos) / fieldScale ) + 0.5         # 45åº¦å›è»¢ã—ã¦æœ€å¤§å¹…1.5ã§æ­£è¦åŒ–(0-1)
+    rotated = ( np.dot(rot, pos) + 1 ) / 2                    # å›è»¢ã‚’è¡Œã£ã¦0-1ã®ç¯„å›²ã«ã‚·ãƒ•ãƒˆ
     pos_np  = np.zeros([n, n])
     i = int(rotated[0]*n)
     j = int(rotated[1]*n)
@@ -60,34 +60,34 @@ def get_pos_matrix(x, y, n=16):
     return pos_np
 
 
-# ©•ª‚ªŒü‚¢‚Ä‚¢‚éŒü‚«‚ğ‚QŸŒ³ƒxƒNƒgƒ‹(n*n)‚É‚µ‚Ä•Ô‚·
+# è‡ªåˆ†ãŒå‘ã„ã¦ã„ã‚‹å‘ãã‚’ï¼’æ¬¡å…ƒãƒ™ã‚¯ãƒˆãƒ«(n*n)ã«ã—ã¦è¿”ã™
 def get_ang_matrix(angle, n=16):
     while angle > 0 : angle -= 360
     while angle < 0 : angle += 360
     my_ang  = np.zeros([n, n])
     for i in range(16):
         for j in range(16):
-            if 360-22.5 < angle or angle <= 22.5 :              #   0‹
+            if 360-22.5 < angle or angle <= 22.5 :              #   0Â°
                 if 10 <= i and 10 <= j      : my_ang[i][j] = 1
-            if  45-22.5 < angle <=  45+22.5 :                   #  45‹
+            if  45-22.5 < angle <=  45+22.5 :                   #  45Â°
                 if 10 <= i and  5 <= j <= 10: my_ang[i][j] = 1
-            if  90-22.5 < angle <=  90+22.5 :                   #  90‹
+            if  90-22.5 < angle <=  90+22.5 :                   #  90Â°
                 if 10 <= i and  5 >= j      : my_ang[i][j] = 1
-            if 135-22.5 < angle <= 135+22.5 :                   # 135‹
+            if 135-22.5 < angle <= 135+22.5 :                   # 135Â°
                 if  5 <= i <=10 and  5 >= j : my_ang[i][j] = 1
-            if 180-22.5 < angle <= 180+22.5 :                   # 180‹
+            if 180-22.5 < angle <= 180+22.5 :                   # 180Â°
                 if  5 >= i and  5 >= j      : my_ang[i][j] = 1
-            if 225-22.5 < angle <= 225+22.5 :                   # 225‹
+            if 225-22.5 < angle <= 225+22.5 :                   # 225Â°
                 if  5 >= i and  5 <= j <= 10: my_ang[i][j] = 1
-            if 270-22.5 < angle <= 270+22.5 :                   # 270‹
+            if 270-22.5 < angle <= 270+22.5 :                   # 270Â°
                 if  5 >= i and  10 <= j     : my_ang[i][j] = 1
-            if 315-22.5 < angle <= 315+22.5 :                   # 315‹
+            if 315-22.5 < angle <= 315+22.5 :                   # 315Â°
                 if  5 <= i <=10 and 10 <= j : my_ang[i][j] = 1
     #print(my_ang)
     return my_ang
 
 
-# “¾“_ƒxƒNƒgƒ‹‚ğ•Ô‚·
+# å¾—ç‚¹ãƒ™ã‚¯ãƒˆãƒ«ã‚’è¿”ã™
 def get_sco_matrix(score, point):
     #point = 1
     np_sco = np.zeros([16, 16])
@@ -105,7 +105,7 @@ def get_sco_matrix(score, point):
     if score[19] == point : np_sco[ 7,  8] = 1   # 19:FriedShrimp_S
     return np_sco
 
-# ©•ª‚Ì‘¤–Ê“¾“_
+# è‡ªåˆ†ã®å´é¢å¾—ç‚¹
 def get_side_matrix(side1, side2):
     np_sco = np.zeros([16, 16])
     for i in range(16):
@@ -116,7 +116,7 @@ def get_side_matrix(side1, side2):
                 if 8 <= i : np_sco[i][j] = 1
     return np_sco
 
-# gazeboÀ•W‚©‚çamcl_poseÀ•W‚É•ÏŠ·‚·‚é
+# gazeboåº§æ¨™ã‹ã‚‰amcl_poseåº§æ¨™ã«å¤‰æ›ã™ã‚‹
 def convert_coord_from_gazebo_to_amcl(my_color, gazebo_x, gazebo_y):
     if my_color == 'r':
         amcl_x    =  gazebo_y
@@ -128,23 +128,23 @@ def convert_coord_from_gazebo_to_amcl(my_color, gazebo_x, gazebo_y):
 
 class RandomBot():
 
-    # Œ»İ‚Ìó‘Ô‚ğæ“¾
+    # ç¾åœ¨ã®çŠ¶æ…‹ã‚’å–å¾—
     def getState(self):
         
-        # ˆÊ’uî•ñ
+        # ä½ç½®æƒ…å ±
         my_angle = quaternion_to_euler(Quaternion(self.pos[2], self.pos[3], self.pos[4], self.pos[5]))
-        my_pos = get_pos_matrix(self.pos[0], self.pos[1])                      # ©•ª‚ÌˆÊ’u
-        en_pos = get_pos_matrix(self.pos[6], self.pos[7]                    )  # ‘Šè‚ÌˆÊ’u
-        my_ang = get_ang_matrix(my_angle.z)                                    # ©•ª‚ÌŒü‚«
+        my_pos = get_pos_matrix(self.pos[0], self.pos[1])                      # è‡ªåˆ†ã®ä½ç½®
+        en_pos = get_pos_matrix(self.pos[6], self.pos[7]                    )  # ç›¸æ‰‹ã®ä½ç½®
+        my_ang = get_ang_matrix(my_angle.z)                                    # è‡ªåˆ†ã®å‘ã
         
-        # R”»î•ñ‚ÌXV(“_”)
+        # å¯©åˆ¤æƒ…å ±ã®æ›´æ–°(ç‚¹æ•°)
         rospy.Subscriber("war_state", String, self.callback_war_state, queue_size=10)
-        my_sco      = get_sco_matrix(self.score,  1)                           # ©•ª‚Ì“_”
-        en_sco      = get_sco_matrix(self.score, -1)                           # ‘Šè‚Ì“_”
-        mySide_sco  = get_side_matrix(self.score[6], self.score[7])            # ©•ª‘¤–Ê‚Ì“_”
-        enSide_sco  = get_side_matrix(self.score[3], self.score[4])            # ‘Šè‘¤–Ê‚Ì“_”
+        my_sco      = get_sco_matrix(self.score,  1)                           # è‡ªåˆ†ã®ç‚¹æ•°
+        en_sco      = get_sco_matrix(self.score, -1)                           # ç›¸æ‰‹ã®ç‚¹æ•°
+        mySide_sco  = get_side_matrix(self.score[6], self.score[7])            # è‡ªåˆ†å´é¢ã®ç‚¹æ•°
+        enSide_sco  = get_side_matrix(self.score[3], self.score[4])            # ç›¸æ‰‹å´é¢ã®ç‚¹æ•°
 
-        # ó‘Ô‚Æ•ñV‚ÌXV( 16 ~ 16 ~ 7ch )
+        # çŠ¶æ…‹ã¨å ±é…¬ã®æ›´æ–°( 16 Ã— 16 Ã— 7ch )
         state       = np.concatenate([np.expand_dims(my_pos,     axis=2),
                                      np.expand_dims(en_pos,     axis=2),
                                      np.expand_dims(my_ang,     axis=2),
@@ -152,28 +152,28 @@ class RandomBot():
                                      np.expand_dims(en_sco,     axis=2),
                                      np.expand_dims(mySide_sco, axis=2),
                                      np.expand_dims(enSide_sco, axis=2)], axis=2)
-        state       = np.reshape(state, [1, 16, 16, 7])                         # Œ»İ‚Ìó‘Ô(©•ª‚Æ‘Šè‚ÌˆÊ’uA“_”)
+        state       = np.reshape(state, [1, 16, 16, 7])                         # ç¾åœ¨ã®çŠ¶æ…‹(è‡ªåˆ†ã¨ç›¸æ‰‹ã®ä½ç½®ã€ç‚¹æ•°)
         
         return state
     
-    # ƒNƒ‰ƒX¶¬‚ÉÅ‰‚ÉŒÄ‚Î‚ê‚é
+    # ã‚¯ãƒ©ã‚¹ç”Ÿæˆæ™‚ã«æœ€åˆã«å‘¼ã°ã‚Œã‚‹
     def __init__(self, bot_name, color='r', Sim_flag=True):
         self.name     = bot_name                                        # bot name 
         self.vel_pub  = rospy.Publisher('cmd_vel', Twist, queue_size=1) # velocity publisher
-        self.sta_pub  = rospy.Publisher("/gazebo/model_states", ModelStates, latch=True) # ‰Šú‰»—p
-        self.timer    = 0                                               # ‘ÎíŠÔ
-        self.reward   = 0.0                                             # •ñV
-        self.my_color = color                                           # ©•ª‚ÌFî•ñ
-        self.en_color = 'b' if color=='r' else 'r'                      # ‘Šè‚ÌFî•ñ
-        self.score    = np.zeros(20)                                    # ƒXƒRƒAî•ñ(ˆÈ‰ºÚ×)
+        self.sta_pub  = rospy.Publisher("/gazebo/model_states", ModelStates, latch=True) # åˆæœŸåŒ–ç”¨
+        self.timer    = 0                                               # å¯¾æˆ¦æ™‚é–“
+        self.reward   = 0.0                                             # å ±é…¬
+        self.my_color = color                                           # è‡ªåˆ†ã®è‰²æƒ…å ±
+        self.en_color = 'b' if color=='r' else 'r'                      # ç›¸æ‰‹ã®è‰²æƒ…å ±
+        self.score    = np.zeros(20)                                    # ã‚¹ã‚³ã‚¢æƒ…å ±(ä»¥ä¸‹è©³ç´°)
         self.sim_flag = Sim_flag
-         #  0:©•ª‚ÌƒXƒRƒA, 1:‘Šè‚ÌƒXƒRƒA
-         #  2:‘ŠèŒã‚ë, 3:‘Šè‚k, 4:‘Šè‚q, 5:©•ªŒã‚ë, 6:©•ª‚k, 7:©•ª‚q
+         #  0:è‡ªåˆ†ã®ã‚¹ã‚³ã‚¢, 1:ç›¸æ‰‹ã®ã‚¹ã‚³ã‚¢
+         #  2:ç›¸æ‰‹å¾Œã‚, 3:ç›¸æ‰‹ï¼¬, 4:ç›¸æ‰‹ï¼², 5:è‡ªåˆ†å¾Œã‚, 6:è‡ªåˆ†ï¼¬, 7:è‡ªåˆ†ï¼²
          #  8:Tomato_N, 9:Tomato_S, 10:Omelette_N, 11:Omelette_S, 12:Pudding_N, 13:Pudding_S
          # 14:OctopusWiener_N, 15:OctopusWiener_S, 16:FriedShrimp_N, 17:FriedShrimp_E, 18:FriedShrimp_W, 19:FriedShrimp_S
-        self.pos      = np.zeros(12)                                    # ˆÊ’uî•ñ(ˆÈ‰ºÚ×)
-         #  0:©•ªˆÊ’u_x,  1:©•ªˆÊ’u_y,  2:©•ªŠp“x_x,  3:©•ªŠp“x_y,  4:©•ªŠp“x_z,  5:©•ªŠp“x_w
-         #  6:‘ŠèˆÊ’u_x,  7:‘ŠèˆÊ’u_y,  8:‘ŠèŠp“x_x,  9:‘ŠèŠp“x_y, 10:‘ŠèŠp“x_z, 11:‘ŠèŠp“x_w
+        self.pos      = np.zeros(12)                                    # ä½ç½®æƒ…å ±(ä»¥ä¸‹è©³ç´°)
+         #  0:è‡ªåˆ†ä½ç½®_x,  1:è‡ªåˆ†ä½ç½®_y,  2:è‡ªåˆ†è§’åº¦_x,  3:è‡ªåˆ†è§’åº¦_y,  4:è‡ªåˆ†è§’åº¦_z,  5:è‡ªåˆ†è§’åº¦_w
+         #  6:ç›¸æ‰‹ä½ç½®_x,  7:ç›¸æ‰‹ä½ç½®_y,  8:ç›¸æ‰‹è§’åº¦_x,  9:ç›¸æ‰‹è§’åº¦_y, 10:ç›¸æ‰‹è§’åº¦_z, 11:ç›¸æ‰‹è§’åº¦_w
         self.w_name = "imageview-" + self.my_color
         # cv2.namedWindow(self.w_name, cv2.WINDOW_NORMAL)
         # cv2.moveWindow(self.w_name, 100, 100)
@@ -205,19 +205,19 @@ class RandomBot():
                 f.write('my_x,my_y,my_qx,my_qy,my_qz,my_qw,my_ax,my_ay,my_az,enemy_x,enemy_y,enemy_qx,enemy_qy,enemy_qz,enemy_qw,enemy_ax,enemy_ay,enemy_az,circle_x,circle_y,circle_r,est_enemy_x,est_enemy_y,est_enemy_u,est_enemy_v,est_enemy_theta,gazebo_my_x,gazebo_my_y,gazebo_enemy_x,gazebo_enemy_y,diff_my_x,diff_my_y,diff_enemy_x,diff_enemy_y\n')
         self.client = actionlib.SimpleActionClient('move_base', MoveBaseAction) # RESPECT @seigot]
         
-        # ‰Šúó‘Ô‚ğæ“¾
-        #self.state = np.zeros([1, 16, 16, 7])                        # ó‘Ô
+        # åˆæœŸçŠ¶æ…‹ã‚’å–å¾—
+        #self.state = np.zeros([1, 16, 16, 7])                        # çŠ¶æ…‹
         self.state = self.getState()
         
         self.action = np.array([0, 0])
         self.action2 = np.array([0, 0])
 
 
-    # ƒXƒRƒAî•ñ‚ÌXV(war_state‚ÌƒR[ƒ‹ƒoƒbƒNŠÖ”)
+    # ã‚¹ã‚³ã‚¢æƒ…å ±ã®æ›´æ–°(war_stateã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°)
     def callback_war_state(self, data):
-        json_dict = json.loads(data.data)                  # json«‘Œ^‚É•ÏŠ·
-        self.score[0] = json_dict['scores'][self.my_color] # ©•ª‚ÌƒXƒRƒA
-        self.score[1] = json_dict['scores'][self.en_color] # ‘Šè‚ÌƒXƒRƒA
+        json_dict = json.loads(data.data)                  # jsonè¾æ›¸å‹ã«å¤‰æ›
+        self.score[0] = json_dict['scores'][self.my_color] # è‡ªåˆ†ã®ã‚¹ã‚³ã‚¢
+        self.score[1] = json_dict['scores'][self.en_color] # ç›¸æ‰‹ã®ã‚¹ã‚³ã‚¢
         if json_dict['state'] == 'running':
             try:
                 for i in range(18):
@@ -225,18 +225,18 @@ class RandomBot():
                     player = json_dict['targets'][i]['player']
                     if player == self.my_color : self.score[2+i] =  float(json_dict['targets'][i]['point'])
                     if player == self.en_color : self.score[2+i] = -float(json_dict['targets'][i]['point'])
-                if self.my_color == 'b':                           # ©•ª‚ªÂF‚¾‚Á‚½ê‡A‘Šè‚Æ©•ª‚ğ“ü‚ê‘Ö‚¦‚é
+                if self.my_color == 'b':                           # è‡ªåˆ†ãŒé’è‰²ã ã£ãŸå ´åˆã€ç›¸æ‰‹ã¨è‡ªåˆ†ã‚’å…¥ã‚Œæ›¿ãˆã‚‹
                     for i in range(3) : self.score[2+i], self.score[5+i] = self.score[5+i], self.score[2+i]
             except:
                 print('callback_war_state: Invalid input ' + e)
 
-    # ˆÊ’uî•ñ‚ÌXV(amcl_pose‚ÌƒR[ƒ‹ƒoƒbƒNŠÖ”)
+    # ä½ç½®æƒ…å ±ã®æ›´æ–°(amcl_poseã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°)
     def callback_amcl_pose(self, data):
         pos = data.pose.pose.position
         ori = data.pose.pose.orientation
         self.pos[0] = pos.x; self.pos[1] = pos.y; self.pos[2] = ori.x; self.pos[3] = ori.y; self.pos[4] = ori.z; self.pos[5] = ori.w
     
-    # ˆÊ’uî•ñ‚ÌXV(model_state‚ÌƒR[ƒ‹ƒoƒbƒNŠÖ”)
+    # ä½ç½®æƒ…å ±ã®æ›´æ–°(model_stateã®ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°)
     def callback_model_state(self, data):
         #print('*********', len(data.pose))
         if 'red_bot' in data.name:
@@ -267,37 +267,37 @@ class RandomBot():
         self.debug_gazebo_enemy_x = gazebo_enemy_x
         self.debug_gazebo_enemy_y = gazebo_enemy_y
 
-    # •ñV‚ÌŒvZ
+    # å ±é…¬ã®è¨ˆç®—
     def calc_reward(self):
         
         reward = 0.0
         
-        # •”•ª“_
+        # éƒ¨åˆ†ç‚¹
         #reward = ( self.score[0] - self.score[1] ) / 10.0
         #if reward >  1: reward =  1
         #if reward < -1: reward = -1
         
-        # ‡I—¹
+        # è©¦åˆçµ‚äº†
         #print('+++***+++', self.score)
         if self.timer > turnEnd:
             if self.score[0] >  self.score[1] : reward =  1
             if self.score[0] <= self.score[1] : reward = -1
-        if self.score[0] >= 100 : reward =  1      # ˆê–{Ÿ‚¿
-        if self.score[1] >= 100 : reward = -1      # ˆê–{•‰‚¯
-        if not self.score[2] == 0 : reward =  1    # ˆê–{Ÿ‚¿
-        if not self.score[5] == 0 : reward = -1    # ˆê–{•‰‚¯
+        if self.score[0] >= 100 : reward =  1      # ä¸€æœ¬å‹ã¡
+        if self.score[1] >= 100 : reward = -1      # ä¸€æœ¬è² ã‘
+        if not self.score[2] == 0 : reward =  1    # ä¸€æœ¬å‹ã¡
+        if not self.score[5] == 0 : reward = -1    # ä¸€æœ¬è² ã‘
         
         return reward
 
 
     # _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-    # _/ s“®ŒvZ‚ÌƒƒCƒ“•”
+    # _/ è¡Œå‹•è¨ˆç®—ã®ãƒ¡ã‚¤ãƒ³éƒ¨
     # _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
     def calcTwist(self):
         
         self.timer += 1
         
-        # s“®‚ğŒˆ’è‚·‚é
+        # è¡Œå‹•ã‚’æ±ºå®šã™ã‚‹
         #action, linear, angle = self.actor.get_action(self.state, 1, self.mainQN)
         action = self.actor.get_action(self.state, self.timer, self.mainQN, self.my_color, self.action, self.action2, self.score[0]-self.score[1], self.sim_flag)
         if self.timer == 1:
@@ -305,12 +305,12 @@ class RandomBot():
             self.action2 = self.action
             self.action = action
         
-        # ˆÚ“®æ‚ÆŠp“x  (’†SˆÊ’u‚ğ‚¸‚ç‚µ‚½Œã‚É45“x”½Œvü‚è‚É‰ñ“])
-        #pos     = (action - 8) * fieldScale/8                                   # –Ú“I’n
-        pos     = (action - 8) / 8.0                                            # –Ú“I’n
-        rot     = get_rotation_matrix(45 * np.pi / 180)                         # 45“x‰ñ“]s—ñ‚Ì’è‹`
-        desti   = np.dot(rot, pos)                                              # 45“x‰ñ“]
-        yaw = np.arctan2( (desti[1]-self.pos[1]), (desti[0]-self.pos[0]) )      # ˆÚ“®æ‚ÌŠp“x
+        # ç§»å‹•å…ˆã¨è§’åº¦  (ä¸­å¿ƒä½ç½®ã‚’ãšã‚‰ã—ãŸå¾Œã«45åº¦åæ™‚è¨ˆå‘¨ã‚Šã«å›è»¢)
+        #pos     = (action - 8) * fieldScale/8                                   # ç›®çš„åœ°
+        pos     = (action - 8) / 8.0                                            # ç›®çš„åœ°
+        rot     = get_rotation_matrix(45 * np.pi / 180)                         # 45åº¦å›è»¢è¡Œåˆ—ã®å®šç¾©
+        desti   = np.dot(rot, pos)                                              # 45åº¦å›è»¢
+        yaw = np.arctan2( (desti[1]-self.pos[1]), (desti[0]-self.pos[0]) )      # ç§»å‹•å…ˆã®è§’åº¦
         if self.my_color == 'r' :
             #print('****Action****', self.timer, action, desti, yaw*360/np.pi)
             print('*** Action *** Time=%2d,  Position=(%4.2f, %4.2f),  Destination=(%4.2f, %4.2f, %4.0f[deg])' % (self.timer, self.pos[0], self.pos[1], desti[0], desti[1], yaw*360/np.pi))
@@ -318,29 +318,29 @@ class RandomBot():
         
         
         
-        # Action‚É]‚Á‚½s“®  –Ú“I’n‚Ìİ’è (X, Y, Yaw)
+        # Actionã«å¾“ã£ãŸè¡Œå‹•  ç›®çš„åœ°ã®è¨­å®š (X, Y, Yaw)
         self.setGoal(-0.3, 0, 0)
         #self.setGoal(desti[0], desti[1], yaw)
-        #self.restart()  # ******* ‹­§Restart—p *******
+        #self.restart()  # ******* å¼·åˆ¶Restartç”¨ *******
         
-        # ActionŒã‚Ìó‘Ô‚Æ•ñV‚ğæ“¾
-        next_state = self.getState()                                            # ActionŒã‚Ìó‘Ô
-        reward     =  self.calc_reward()                                        # Action‚ÌŒ‹‰Ê‚Ì•ñV
+        # Actionå¾Œã®çŠ¶æ…‹ã¨å ±é…¬ã‚’å–å¾—
+        next_state = self.getState()                                            # Actionå¾Œã®çŠ¶æ…‹
+        reward     =  self.calc_reward()                                        # Actionã®çµæœã®å ±é…¬
         
-        # ƒƒ‚ƒŠ‚ÌXV‚·‚é
-        self.memory.add((self.state, action, reward, next_state))               # ƒƒ‚ƒŠ‚ÌXV‚·‚é
-        if abs(reward) == 1 : np.zeros([1, 16, 16, 7])                          # ‡I—¹‚ÍŸ‚Ìó‘Ô‚Í‚È‚¢
-        self.state  = next_state                                                 # ó‘ÔXV
+        # ãƒ¡ãƒ¢ãƒªã®æ›´æ–°ã™ã‚‹
+        self.memory.add((self.state, action, reward, next_state))               # ãƒ¡ãƒ¢ãƒªã®æ›´æ–°ã™ã‚‹
+        if abs(reward) == 1 : np.zeros([1, 16, 16, 7])                          # è©¦åˆçµ‚äº†æ™‚ã¯æ¬¡ã®çŠ¶æ…‹ã¯ãªã„
+        self.state  = next_state                                                 # çŠ¶æ…‹æ›´æ–°
         self.action2 = self.action
         self.action = action
         
-        # Qƒlƒbƒgƒ[ƒN‚Ìd‚İ‚ğŠwKEXV‚·‚é replay
+        # Qãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã®é‡ã¿ã‚’å­¦ç¿’ãƒ»æ›´æ–°ã™ã‚‹ replay
         if self.training == True : learn = 1
         else                     : learn = 0
         if self.my_color == 'b'  : learn = 0
-        batch_size = 40   # Q-network‚ğXV‚·‚éƒoƒbƒ`‚Ì‘å‚«‚³
-        #batch_size = self.timer - 1   # Q-network‚ğXV‚·‚éƒoƒbƒ`‚Ì‘å‚«‚³
-        gamma = 0.97      # Š„ˆøŒW”
+        batch_size = 40   # Q-networkã‚’æ›´æ–°ã™ã‚‹ãƒãƒƒãƒã®å¤§ãã•
+        #batch_size = self.timer - 1   # Q-networkã‚’æ›´æ–°ã™ã‚‹ãƒãƒƒãƒã®å¤§ãã•
+        gamma = 0.97      # å‰²å¼•ä¿‚æ•°
         if (batch_size >= 2 and self.memory.len() > batch_size) and learn:
             #print('call replay timer=', self.timer)
             self.mainQN.replay(self.memory, batch_size, gamma, self.targetQN, self.my_color)
@@ -363,9 +363,9 @@ class RandomBot():
         #return twist
 
 
-    # ƒVƒ…ƒ~ƒŒ[ƒVƒ‡ƒ“ÄŠJ
+    # ã‚·ãƒ¥ãƒŸãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³å†é–‹
     def restart(self):
-        self.vel_pub.publish(Twist()) # “®‚«‚ğ~‚ß‚é
+        self.vel_pub.publish(Twist()) # å‹•ãã‚’æ­¢ã‚ã‚‹
         self.memory.reset()
         self.score  = np.zeros(20)
         self.timer  = 0
@@ -377,7 +377,7 @@ class RandomBot():
     # RESPECT @seigot
     # do following command first.
     #   $ roslaunch burger_navigation multi_robot_navigation_run.launch
-    #   $ rosservice call move_base_set_logger_level ros.move_base WARN   # ˆÚ“®‚ÌƒƒO‚ğ•\¦‚µ‚È‚¢
+    #   $ rosservice call move_base_set_logger_level ros.move_base WARN   # ç§»å‹•æ™‚ã®ãƒ­ã‚°ã‚’è¡¨ç¤ºã—ãªã„
     def setGoal(self,x,y,yaw):
         self.client.wait_for_server()
         #print('setGoal x=', x, 'y=', y, 'yaw=', yaw)
@@ -398,7 +398,7 @@ class RandomBot():
         goal.target_pose.pose.orientation.z = q[2]
         goal.target_pose.pose.orientation.w = q[3]
 
-        # State‚Ì–ß‚è’lÚ×FPENDING, ACTIVE, RECALLED, REJECTED, PREEMPTED, ABORTED, SUCCEEDED, LOST
+        # Stateã®æˆ»ã‚Šå€¤è©³ç´°ï¼šPENDING, ACTIVE, RECALLED, REJECTED, PREEMPTED, ABORTED, SUCCEEDED, LOST
         #  https://docs.ros.org/diamondback/api/actionlib/html/classactionlib_1_1SimpleClientGoalState.html#a91066f14351d31404a2179da02c518a0a2f87385336ac64df093b7ea61c76fafe
         #state = self.client.send_goal_and_wait(goal, execute_timeout=rospy.Duration(5))
         state = self.client.send_goal_and_wait(goal, execute_timeout=rospy.Duration(4))
@@ -408,33 +408,33 @@ class RandomBot():
 
 
     # _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-    # _/ í—ª•”(ŒJ‚è•Ô‚µˆ—‚ğs‚í‚¹‚é)
+    # _/ æˆ¦ç•¥éƒ¨(ç¹°ã‚Šè¿”ã—å‡¦ç†ã‚’è¡Œã‚ã›ã‚‹)
     # _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
     def strategy(self):
         
         rospy_Rate = timeScale
-        r = rospy.Rate(rospy_Rate) # ‚P•bŠÔ‚É‘—‚é‘—M‰ñ” (change speed 1fps)
+        r = rospy.Rate(rospy_Rate) # ï¼‘ç§’é–“ã«é€ã‚‹é€ä¿¡å›æ•° (change speed 1fps)
         
-        # Qƒlƒbƒgƒ[ƒN‚Æƒƒ‚ƒŠAActor‚Ì¶¬--------------------------------------------------------
-        learning_rate = 0.0005          # Q-network‚ÌŠwKŒW”
-        memory_size   = 400             # ƒoƒbƒtƒ@[ƒƒ‚ƒŠ‚Ì‘å‚«‚³
-        self.mainQN   = DQN.QNetwork(learning_rate=learning_rate)   # ƒƒCƒ“‚ÌQƒlƒbƒgƒ[ƒN
-        self.targetQN = DQN.QNetwork(learning_rate=learning_rate)   # ‰¿’l‚ğŒvZ‚·‚éQƒlƒbƒgƒ[ƒN
+        # Qãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯ã¨ãƒ¡ãƒ¢ãƒªã€Actorã®ç”Ÿæˆ--------------------------------------------------------
+        learning_rate = 0.0005          # Q-networkã®å­¦ç¿’ä¿‚æ•°
+        memory_size   = 400             # ãƒãƒƒãƒ•ã‚¡ãƒ¼ãƒ¡ãƒ¢ãƒªã®å¤§ãã•
+        self.mainQN   = DQN.QNetwork(learning_rate=learning_rate)   # ãƒ¡ã‚¤ãƒ³ã®Qãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯
+        self.targetQN = DQN.QNetwork(learning_rate=learning_rate)   # ä¾¡å€¤ã‚’è¨ˆç®—ã™ã‚‹Qãƒãƒƒãƒˆãƒ¯ãƒ¼ã‚¯
         self.memory   = DQN.Memory(max_size=memory_size)
         self.actor    = DQN.Actor()
         
-        # d‚İ‚Ì“Ç‚İ‚İ
-        if self.sim_flag == True : self.mainQN.model.load_weights('../catkin_ws/src/burger_war/burger_war/scripts/weight.hdf5')     # d‚İ‚Ì“Ç‚İ‚İ
-        else                     : self.mainQN.model.load_weights('../wss/Yoshihama0901_ws/src/burger_war/burger_war/scripts/weight.hdf5')     # d‚İ‚Ì“Ç‚İ‚İ
+        # é‡ã¿ã®èª­ã¿è¾¼ã¿
+        if self.sim_flag == True : self.mainQN.model.load_weights('../catkin_ws/src/burger_war/burger_war/scripts/weight.hdf5')     # é‡ã¿ã®èª­ã¿è¾¼ã¿
+        else                     : self.mainQN.model.load_weights('../wss/Yoshihama0901_ws/src/burger_war/burger_war/scripts/weight.hdf5')     # é‡ã¿ã®èª­ã¿è¾¼ã¿
         self.targetQN.model.set_weights(self.mainQN.model.get_weights())
 
         while not rospy.is_shutdown():
             
-            twist = self.calcTwist()    # ˆÚ“®‹——£‚ÆŠp“x‚ğŒvZ
-            #self.vel_pub.publish(twist) # ROS‚É”½‰f
+            twist = self.calcTwist()    # ç§»å‹•è·é›¢ã¨è§’åº¦ã‚’è¨ˆç®—
+            #self.vel_pub.publish(twist) # ROSã«åæ˜ 
             
             if self.training == True:
-                # ‡I—¹‚µ‚½ê‡
+                # è©¦åˆçµ‚äº†ã—ãŸå ´åˆ
                 if self.my_color == 'r':
                     if abs(self.reward) == 1 or self.timer > turnEnd:
                         if   self.reward == 0 : print('Draw')
@@ -443,18 +443,18 @@ class RandomBot():
                         with open('result.csv', 'a') as f:
                             writer = csv.writer(f, lineterminator='\n')
                             writer.writerow([self.score[0], self.score[1]])
-                        self.mainQN.model.save_weights('../catkin_ws/src/burger_war/burger_war/scripts/weight.hdf5')            # ƒ‚ƒfƒ‹‚Ì•Û‘¶
-                        self.restart()                                          # ‡ÄŠJ
+                        self.mainQN.model.save_weights('../catkin_ws/src/burger_war/burger_war/scripts/weight.hdf5')            # ãƒ¢ãƒ‡ãƒ«ã®ä¿å­˜
+                        self.restart()                                          # è©¦åˆå†é–‹
                         r.sleep()
                 else:
                     if self.timer % turnEnd == 0 :
                         self.memory.reset()
-                        self.mainQN.model.load_weights('../catkin_ws/src/burger_war/burger_war/scripts/weight.hdf5')                # d‚İ‚Ì“Ç‚İ‚İ
+                        self.mainQN.model.load_weights('../catkin_ws/src/burger_war/burger_war/scripts/weight.hdf5')                # é‡ã¿ã®èª­ã¿è¾¼ã¿
         
             r.sleep()
 
     # _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-    # _/ –î’J‚³‚ñì¬‚µ‚½•”•ª(‘½•ª•Ï‚¦‚é–‚Í‚È‚¢‚Æv‚¤)
+    # _/ çŸ¢è°·ã•ã‚“ä½œæˆã—ãŸéƒ¨åˆ†(å¤šåˆ†å¤‰ãˆã‚‹äº‹ã¯ãªã„ã¨æ€ã†)
     # _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
     def imageCallback(self, data):
         try:
@@ -558,10 +558,10 @@ class RandomBot():
 
 if __name__ == '__main__':
     
-    # simŠÂ‹«—p‚Ìƒtƒ‰ƒOB–{”Ô(À‹@“®ì)‚Å‚ÍA
-    #   EƒŠƒZƒbƒg“®ì‚ğs‚í‚È‚¢
-    #   EŠwK‚ğs‚í‚È‚¢
-    #   EŠm—¦‚Å‚Ìƒ‰ƒ“ƒ_ƒ€“®ì‚ğs‚í‚È‚¢
+    # simç’°å¢ƒç”¨ã®ãƒ•ãƒ©ã‚°ã€‚æœ¬ç•ª(å®Ÿæ©Ÿå‹•ä½œ)ã§ã¯ã€
+    #   ãƒ»ãƒªã‚»ãƒƒãƒˆå‹•ä½œã‚’è¡Œã‚ãªã„
+    #   ãƒ»å­¦ç¿’ã‚’è¡Œã‚ãªã„
+    #   ãƒ»ç¢ºç‡ã§ã®ãƒ©ãƒ³ãƒ€ãƒ å‹•ä½œã‚’è¡Œã‚ãªã„
     Sim_flag = True
     
     rname = rosparam.get_param('randomRun/rname')
@@ -570,7 +570,7 @@ if __name__ == '__main__':
     else                                 : color = 'b'
     print('****************', rname, rside, color)
     
-    rospy.init_node('IntegAI_run')    # ‰Šú‰»éŒ¾ : ‚±‚Ìƒ\ƒtƒgƒEƒFƒA‚Í"IntegAI_run"‚Æ‚¢‚¤–¼‘O
+    rospy.init_node('IntegAI_run')    # åˆæœŸåŒ–å®£è¨€ : ã“ã®ã‚½ãƒ•ãƒˆã‚¦ã‚§ã‚¢ã¯"IntegAI_run"ã¨ã„ã†åå‰
     bot = RandomBot('Team Integ AI', color=color, Sim_flag=Sim_flag)
     
     bot.strategy()
