@@ -24,6 +24,7 @@ import rosparam
 # 強化学習DQN (Deep Q Network)
 from MyModule import DQN
 
+#timeScale  = 4    # １秒間で何回座標計算するか？
 timeScale  = 4    # １秒間で何回座標計算するか？
 fieldScale = 1.5  # 競技場の広さ
 #turnEnd    = 40   # 何ターンで１試合を終了させるか
